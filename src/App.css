@@ -1,0 +1,21 @@
+/* App-level overrides — keep minimal, let Tailwind handle most styling */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove default focus outline, Tailwind's ring handles it */
+*:focus {
+  outline: none;
+}
+
+/* Number input — hide spinners */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
