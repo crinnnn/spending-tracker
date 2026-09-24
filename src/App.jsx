@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from './components/Layout';
 import DashboardView from './components/DashboardView';
 import AddExpense from './components/AddExpense';
@@ -9,10 +9,11 @@ import ProfileView from './components/ProfileView';
 import EditTransactionModal from './components/EditTransactionModal';
 import BudgetModal from './components/BudgetModal';
 import AIAdvisorModal from './components/AIAdvisorModal';
+import AuthModal from './components/AuthModal';
 import api from './services/api';
 import './App.css';
 
-/* ── Initial Seed Transactions (September 2026) ── */
+/* ── Initial Starter Transactions ── */
 const INITIAL_TRANSACTIONS = [
   { id: 'tx-1', amount: 180, currency: 'PHP', category: 'Food & Drink', merchant: 'Starbucks', date: '2026-09-15', notes: 'Morning coffee' },
   { id: 'tx-2', amount: 1450, currency: 'PHP', category: 'Shopping', merchant: 'SM Supermarket', date: '2026-09-14', notes: 'Weekly groceries' },
@@ -35,6 +36,17 @@ const INITIAL_BUDGETS = {
 function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [backendConnected, setBackendConnected] = useState(false);
+
+  /* ── User Authentication State ── */
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('spendwise-user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   /* ── Dark Mode ── */
   const [darkMode, setDarkMode] = useState(() => {
@@ -105,44 +117,66 @@ function App() {
     }
   });
 
-  /* ── Backend Sync on Mount ── */
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const isHealthy = await api.checkHealth();
-        if (isHealthy) {
-          setBackendConnected(true);
-          const [backendTx, backendBudgets, backendSubs, backendSettings] = await Promise.all([
-            api.getTransactions().catch(() => null),
-            api.getBudgets().catch(() => null),
-            api.getSubscriptions().catch(() => null),
-            api.getSettings().catch(() => null),
-          ]);
+  /* ── Synchronize with Backend ── */
+  const loadUserData = useCallback(async () => {
+    try {
+      const isHealthy = await api.checkHealth();
+      setBackendConnected(isHealthy);
 
-          if (backendTx && Array.isArray(backendTx) && backendTx.length > 0) {
-            setTransactions(backendTx);
-            try { localStorage.setItem('spendwise-transactions', JSON.stringify(backendTx)); } catch {}
-          }
-          if (backendBudgets && typeof backendBudgets === 'object' && Object.keys(backendBudgets).length > 0) {
-            setBudgets(backendBudgets);
-            try { localStorage.setItem('spendwise-budgets', JSON.stringify(backendBudgets)); } catch {}
-          }
-          if (backendSubs && Array.isArray(backendSubs) && backendSubs.length > 0) {
-            setSubscriptions(backendSubs);
-            try { localStorage.setItem('spendwise-subscriptions', JSON.stringify(backendSubs)); } catch {}
-          }
-          if (backendSettings && backendSettings.currency) {
-            setCurrency(backendSettings.currency);
-            try { localStorage.setItem('spendwise-currency', backendSettings.currency); } catch {}
-          }
+      if (isHealthy) {
+        // If token exists, load user-specific data from MongoDB
+        const [backendTx, backendBudgets, backendSubs, backendSettings] = await Promise.all([
+          api.getTransactions().catch(() => null),
+          api.getBudgets().catch(() => null),
+          api.getSubscriptions().catch(() => null),
+          api.getSettings().catch(() => null),
+        ]);
+
+        if (backendTx && Array.isArray(backendTx)) {
+          setTransactions(backendTx);
+          try { localStorage.setItem('spendwise-transactions', JSON.stringify(backendTx)); } catch {}
         }
-      } catch (err) {
-        console.warn('Backend synchronization notice:', err.message);
+        if (backendBudgets && typeof backendBudgets === 'object' && Object.keys(backendBudgets).length > 0) {
+          setBudgets(backendBudgets);
+          try { localStorage.setItem('spendwise-budgets', JSON.stringify(backendBudgets)); } catch {}
+        }
+        if (backendSubs && Array.isArray(backendSubs)) {
+          setSubscriptions(backendSubs);
+          try { localStorage.setItem('spendwise-subscriptions', JSON.stringify(backendSubs)); } catch {}
+        }
+        if (backendSettings && backendSettings.currency) {
+          setCurrency(backendSettings.currency);
+          try { localStorage.setItem('spendwise-currency', backendSettings.currency); } catch {}
+        }
       }
+    } catch (err) {
+      console.warn('Backend synchronization notice:', err.message);
     }
-
-    loadData();
   }, []);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
+
+  /* ── Auth Handlers ── */
+  function handleAuthSuccess(user) {
+    setCurrentUser(user);
+    if (user.currency) setCurrency(user.currency);
+    loadUserData();
+  }
+
+  function handleLogout() {
+    api.logout();
+    setCurrentUser(null);
+    setTransactions(INITIAL_TRANSACTIONS);
+    setBudgets(INITIAL_BUDGETS);
+    setSubscriptions(DEFAULT_SAMPLE_SUBSCRIPTIONS);
+    try {
+      localStorage.setItem('spendwise-transactions', JSON.stringify(INITIAL_TRANSACTIONS));
+      localStorage.setItem('spendwise-budgets', JSON.stringify(INITIAL_BUDGETS));
+      localStorage.setItem('spendwise-subscriptions', JSON.stringify(DEFAULT_SAMPLE_SUBSCRIPTIONS));
+    } catch {}
+  }
 
   /* ── Modals State ── */
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -162,7 +196,7 @@ function App() {
       } catch {}
       return updated;
     });
-    api.createTransaction(newTx).catch((err) => console.warn('Failed to persist tx to backend:', err));
+    api.createTransaction(newTx).catch((err) => console.warn('Notice persisting tx to backend:', err.message));
   }
 
   function handleUpdateTransaction(updatedTx) {
@@ -174,7 +208,7 @@ function App() {
       return updated;
     });
     setEditingTransaction(null);
-    api.updateTransaction(updatedTx.id, updatedTx).catch((err) => console.warn('Failed to update tx on backend:', err));
+    api.updateTransaction(updatedTx.id, updatedTx).catch((err) => console.warn('Notice updating tx on backend:', err.message));
   }
 
   function handleDeleteTransaction(id) {
@@ -185,7 +219,7 @@ function App() {
       } catch {}
       return updated;
     });
-    api.deleteTransaction(id).catch((err) => console.warn('Failed to delete tx on backend:', err));
+    api.deleteTransaction(id).catch((err) => console.warn('Notice deleting tx on backend:', err.message));
   }
 
   /* ── Budgets CRUD ── */
@@ -194,7 +228,7 @@ function App() {
     try {
       localStorage.setItem('spendwise-budgets', JSON.stringify(newBudgets));
     } catch {}
-    api.updateBudgets(newBudgets).catch((err) => console.warn('Failed to update budgets on backend:', err));
+    api.updateBudgets(newBudgets).catch((err) => console.warn('Notice updating budgets on backend:', err.message));
   }
 
   /* ── Subscriptions CRUD ── */
@@ -206,7 +240,7 @@ function App() {
       } catch {}
       return updated;
     });
-    api.createSubscription(newSub).catch((err) => console.warn('Failed to save subscription on backend:', err));
+    api.createSubscription(newSub).catch((err) => console.warn('Notice saving subscription on backend:', err.message));
   }
 
   function handleDeleteSubscription(id) {
@@ -217,28 +251,22 @@ function App() {
       } catch {}
       return updated;
     });
-    api.deleteSubscription(id).catch((err) => console.warn('Failed to delete subscription on backend:', err));
+    api.deleteSubscription(id).catch((err) => console.warn('Notice deleting subscription on backend:', err.message));
   }
 
   /* ── Backup Restore & Reset ── */
   async function handleRestoreData(data) {
     if (data.transactions) {
       setTransactions(data.transactions);
-      try {
-        localStorage.setItem('spendwise-transactions', JSON.stringify(data.transactions));
-      } catch {}
+      try { localStorage.setItem('spendwise-transactions', JSON.stringify(data.transactions)); } catch {}
     }
     if (data.budgets) {
       setBudgets(data.budgets);
-      try {
-        localStorage.setItem('spendwise-budgets', JSON.stringify(data.budgets));
-      } catch {}
+      try { localStorage.setItem('spendwise-budgets', JSON.stringify(data.budgets)); } catch {}
     }
     if (data.subscriptions) {
       setSubscriptions(data.subscriptions);
-      try {
-        localStorage.setItem('spendwise-subscriptions', JSON.stringify(data.subscriptions));
-      } catch {}
+      try { localStorage.setItem('spendwise-subscriptions', JSON.stringify(data.subscriptions)); } catch {}
     }
     try {
       await api.restoreDatabase(data);
@@ -248,7 +276,7 @@ function App() {
   }
 
   async function handleResetData() {
-    if (window.confirm('Reset all transactions and budgets to the default sample dataset?')) {
+    if (window.confirm('Reset all transactions and budgets to default starter data?')) {
       setTransactions(INITIAL_TRANSACTIONS);
       setBudgets(INITIAL_BUDGETS);
       setSubscriptions(DEFAULT_SAMPLE_SUBSCRIPTIONS);
@@ -335,6 +363,9 @@ function App() {
         onCurrencyChange={handleCurrencyChange}
         onResetData={handleResetData}
         onRestoreData={handleRestoreData}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
     ),
   };
@@ -348,11 +379,20 @@ function App() {
         setDarkMode={toggleDarkMode}
         currency={currency}
         backendConnected={backendConnected}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       >
         {views[activeTab] || views.home}
       </Layout>
 
       {/* ── Global Modals ── */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
       <EditTransactionModal
         isOpen={Boolean(editingTransaction)}
         transaction={editingTransaction}

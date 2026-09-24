@@ -8,6 +8,8 @@ import {
   Sun,
   Moon,
   CalendarClock,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 import { getCurrencySymbol } from '../utils/exportUtils';
 
@@ -27,8 +29,13 @@ export default function Layout({
   setDarkMode,
   currency = 'PHP',
   backendConnected = false,
+  currentUser = null,
+  onOpenAuth,
+  onLogout,
   children,
 }) {
+  const userInitial = currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U';
+
   return (
     <div className={`min-h-screen flex transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen flex flex-1 bg-[#FDFBF7] dark:bg-dark-bg transition-colors duration-300">
@@ -75,33 +82,56 @@ export default function Layout({
           </nav>
 
           {/* Dark mode toggle */}
-          <div className="px-4 py-3">
+          <div className="px-4 py-2">
             <button
               onClick={() => setDarkMode((d) => !d)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#9B93A9] dark:text-dark-muted hover:bg-[#E6E6FA]/20 dark:hover:bg-[#E6E6FA]/10 hover:text-[#4A4556] dark:hover:text-dark-text transition-all cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-[#9B93A9] dark:text-dark-muted hover:bg-[#E6E6FA]/20 dark:hover:bg-[#E6E6FA]/10 hover:text-[#4A4556] dark:hover:text-dark-text transition-all cursor-pointer"
             >
-              {darkMode ? <Sun size={19} /> : <Moon size={19} />}
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               {darkMode ? 'Light Mode' : 'Dark Mode'}
             </button>
           </div>
 
-          {/* Sidebar footer */}
-          <div className="px-4 py-5 border-t border-[#E6E6FA]/40 dark:border-dark-border">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FCE4EC] to-[#E6E6FA] dark:from-[#FCE4EC]/30 dark:to-[#E6E6FA]/30 flex items-center justify-center text-sm font-semibold text-[#4A4556] dark:text-dark-text">
-                U
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-[#4A4556] dark:text-dark-text leading-tight">
-                  User
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${backendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
-                  <p className="text-[11px] text-[#9B93A9] dark:text-dark-muted font-medium">
-                    {backendConnected ? 'SQLite Live' : 'Offline'}
-                  </p>
+          {/* Sidebar footer / User Account */}
+          <div className="p-4 border-t border-[#E6E6FA]/40 dark:border-dark-border">
+            {currentUser ? (
+              <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-[#FDFBF7] dark:bg-dark-bg border border-[#E6E6FA]/50 dark:border-dark-border">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-full shrink-0 bg-gradient-to-br from-[#FCE4EC] to-[#E6E6FA] dark:from-[#FCE4EC]/30 dark:to-[#E6E6FA]/30 flex items-center justify-center text-sm font-bold text-[#4A4556] dark:text-dark-text shadow-xs">
+                    {userInitial}
+                  </div>
+                  <div className="text-left truncate">
+                    <p className="text-xs font-bold text-[#4A4556] dark:text-dark-text truncate">
+                      {currentUser.name}
+                    </p>
+                    <p className="text-[10px] text-[#9B93A9] dark:text-dark-muted truncate">
+                      {currentUser.email}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={onLogout}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg text-[#9B93A9] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer shrink-0"
+                >
+                  <LogOut size={16} />
+                </button>
               </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="w-full py-2.5 px-3 rounded-2xl bg-[#574C78] hover:bg-[#463c63] text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <LogIn size={15} />
+                <span>Sign In / Register</span>
+              </button>
+            )}
+
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${backendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+              <p className="text-[10px] text-[#9B93A9] dark:text-dark-muted font-medium">
+                {backendConnected ? 'MongoDB Cloud Live' : 'Offline / Local'}
+              </p>
             </div>
           </div>
         </aside>
@@ -131,9 +161,13 @@ export default function Layout({
                 >
                   {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FCE4EC] to-[#E6E6FA] dark:from-[#FCE4EC]/30 dark:to-[#E6E6FA]/30 flex items-center justify-center text-xs font-semibold text-[#4A4556] dark:text-dark-text shadow-sm">
-                  U
-                </div>
+                {/* Mobile User Profile Button */}
+                <button
+                  onClick={currentUser ? onLogout : onOpenAuth}
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FCE4EC] to-[#E6E6FA] dark:from-[#FCE4EC]/30 dark:to-[#E6E6FA]/30 flex items-center justify-center text-xs font-semibold text-[#4A4556] dark:text-dark-text shadow-sm cursor-pointer"
+                >
+                  {userInitial}
+                </button>
               </div>
             </div>
           </header>
