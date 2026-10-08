@@ -38,6 +38,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Database connection readiness check
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next();
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      error: 'MongoDB Atlas is not connected yet (Authentication failed). Please check your Database User in MongoDB Atlas.',
+    });
+  }
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/transactions', transactionsRouter);

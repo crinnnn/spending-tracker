@@ -5,7 +5,7 @@ import api from '../services/api';
  * Helper to call Gemini models with automatic fallback if a model is temporarily unavailable.
  */
 async function generateWithFallback(ai, contents, systemInstruction) {
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.6-flash'];
+  const models = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
   let lastError;
 
   for (const model of models) {

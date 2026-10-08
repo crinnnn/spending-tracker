@@ -2,6 +2,12 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import dns from 'node:dns';
+
+// Fix for Windows DNS resolution with MongoDB Atlas SRV records
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {}
 
 import { Transaction } from './models/Transaction.js';
 import { Budget } from './models/Budget.js';
