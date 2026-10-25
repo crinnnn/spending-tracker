@@ -58,6 +58,18 @@ app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/ai', aiRouter);
 
+// Serve static frontend files in production
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Catch-all route to serve Vite index.html for client-side routing
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.sendFile(path.join(distPath, 'index.html'));
+  }
+  next();
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err);

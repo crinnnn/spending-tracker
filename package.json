@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node server/index.js",
     "dev": "concurrently -k -n \"client,server\" -c \"cyan,magenta\" \"vite\" \"node --watch server/index.js\"",
     "dev:client": "vite",
     "dev:server": "node --watch server/index.js",
