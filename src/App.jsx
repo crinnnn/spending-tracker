@@ -91,9 +91,9 @@ function App() {
   const [transactions, setTransactions] = useState(() => {
     try {
       const saved = localStorage.getItem('spendwise-transactions');
-      return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return INITIAL_TRANSACTIONS;
+      return [];
     }
   });
 
@@ -101,9 +101,9 @@ function App() {
   const [budgets, setBudgets] = useState(() => {
     try {
       const saved = localStorage.getItem('spendwise-budgets');
-      return saved ? JSON.parse(saved) : INITIAL_BUDGETS;
+      return saved ? JSON.parse(saved) : {};
     } catch {
-      return INITIAL_BUDGETS;
+      return {};
     }
   });
 
@@ -111,9 +111,9 @@ function App() {
   const [subscriptions, setSubscriptions] = useState(() => {
     try {
       const saved = localStorage.getItem('spendwise-subscriptions');
-      return saved ? JSON.parse(saved) : DEFAULT_SAMPLE_SUBSCRIPTIONS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_SAMPLE_SUBSCRIPTIONS;
+      return [];
     }
   });
 
@@ -136,7 +136,7 @@ function App() {
           setTransactions(backendTx);
           try { localStorage.setItem('spendwise-transactions', JSON.stringify(backendTx)); } catch {}
         }
-        if (backendBudgets && typeof backendBudgets === 'object' && Object.keys(backendBudgets).length > 0) {
+        if (backendBudgets && typeof backendBudgets === 'object') {
           setBudgets(backendBudgets);
           try { localStorage.setItem('spendwise-budgets', JSON.stringify(backendBudgets)); } catch {}
         }
@@ -162,19 +162,28 @@ function App() {
   function handleAuthSuccess(user) {
     setCurrentUser(user);
     if (user.currency) setCurrency(user.currency);
+    // Clear previous state and storage immediately to avoid stale data bleeding
+    setTransactions([]);
+    setBudgets({});
+    setSubscriptions([]);
+    try {
+      localStorage.removeItem('spendwise-transactions');
+      localStorage.removeItem('spendwise-budgets');
+      localStorage.removeItem('spendwise-subscriptions');
+    } catch {}
     loadUserData();
   }
 
   function handleLogout() {
     api.logout();
     setCurrentUser(null);
-    setTransactions(INITIAL_TRANSACTIONS);
-    setBudgets(INITIAL_BUDGETS);
-    setSubscriptions(DEFAULT_SAMPLE_SUBSCRIPTIONS);
+    setTransactions([]);
+    setBudgets({});
+    setSubscriptions([]);
     try {
-      localStorage.setItem('spendwise-transactions', JSON.stringify(INITIAL_TRANSACTIONS));
-      localStorage.setItem('spendwise-budgets', JSON.stringify(INITIAL_BUDGETS));
-      localStorage.setItem('spendwise-subscriptions', JSON.stringify(DEFAULT_SAMPLE_SUBSCRIPTIONS));
+      localStorage.removeItem('spendwise-transactions');
+      localStorage.removeItem('spendwise-budgets');
+      localStorage.removeItem('spendwise-subscriptions');
     } catch {}
   }
 
@@ -275,6 +284,24 @@ function App() {
     }
   }
 
+  async function handleClearData() {
+    if (window.confirm('Clear all your transactions, budgets, and subscriptions to start completely fresh? This cannot be undone.')) {
+      setTransactions([]);
+      setBudgets({});
+      setSubscriptions([]);
+      try {
+        localStorage.setItem('spendwise-transactions', JSON.stringify([]));
+        localStorage.setItem('spendwise-budgets', JSON.stringify({}));
+        localStorage.setItem('spendwise-subscriptions', JSON.stringify([]));
+      } catch {}
+      try {
+        await api.clearDatabase();
+      } catch (err) {
+        console.warn('Backend clear notice:', err.message);
+      }
+    }
+  }
+
   async function handleResetData() {
     if (window.confirm('Reset all transactions and budgets to default starter data?')) {
       setTransactions(INITIAL_TRANSACTIONS);
@@ -361,6 +388,7 @@ function App() {
         subscriptions={subscriptions}
         currency={currency}
         onCurrencyChange={handleCurrencyChange}
+        onClearData={handleClearData}
         onResetData={handleResetData}
         onRestoreData={handleRestoreData}
         currentUser={currentUser}

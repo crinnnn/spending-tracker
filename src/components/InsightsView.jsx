@@ -240,7 +240,13 @@ export default function InsightsView({
         </div>
 
         <div className="space-y-4 pt-1">
-          {categoryBreakdown.map((c) => {
+          {categoryBreakdown.length === 0 ? (
+            <div className="p-8 text-center space-y-2 rounded-2xl bg-[#FDFBF7] dark:bg-dark-bg/40 border border-[#E6E6FA]/40 dark:border-dark-border">
+              <p className="text-sm font-medium text-[#4A4556] dark:text-dark-text">No category spending yet</p>
+              <p className="text-xs text-[#9B93A9] dark:text-dark-muted">Log your first transaction or set category budgets to see analytics.</p>
+            </div>
+          ) : (
+            categoryBreakdown.map((c) => {
             const hasBudget = c.budget > 0;
             const budgetPct = hasBudget ? Math.round((c.amount / c.budget) * 100) : null;
             const isOverBudget = hasBudget && c.amount > c.budget;
@@ -287,7 +293,7 @@ export default function InsightsView({
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
     </div>

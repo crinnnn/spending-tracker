@@ -107,6 +107,31 @@ router.post('/reset', async (req, res) => {
   }
 });
 
+// POST clear all current user's data (fresh clean slate)
+router.post('/clear', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await Promise.all([
+      Transaction.deleteMany({ userId }),
+      Budget.deleteMany({ userId }),
+      Subscription.deleteMany({ userId }),
+    ]);
+
+    res.json({
+      success: true,
+      message: 'All your personal spending tracker data was successfully cleared',
+      data: {
+        transactions: [],
+        budgets: {},
+        subscriptions: [],
+      },
+    });
+  } catch (err) {
+    console.error('Error clearing user data:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST restore backup data for current user
 router.post('/restore', async (req, res) => {
   try {

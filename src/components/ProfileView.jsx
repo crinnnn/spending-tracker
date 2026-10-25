@@ -14,6 +14,7 @@ import {
   LogOut,
   LogIn,
   KeyRound,
+  Trash2,
 } from 'lucide-react';
 import { exportToCSV, exportToJSON, readAndValidateJSON, CURRENCY_SYMBOLS, formatCurrency } from '../utils/exportUtils';
 
@@ -23,6 +24,7 @@ export default function ProfileView({
   subscriptions = [],
   currency = 'PHP',
   onCurrencyChange,
+  onClearData,
   onResetData,
   onRestoreData,
   currentUser = null,
@@ -235,18 +237,37 @@ export default function ProfileView({
           </button>
         </div>
 
+        {/* Clear All Data */}
+        {onClearData && (
+          <button
+            onClick={onClearData}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50/60 dark:hover:bg-rose-950/20 transition-colors cursor-pointer mt-2"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                <Trash2 size={18} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Clear All Data (Start Fresh)</p>
+                <p className="text-xs text-[#9B93A9] dark:text-dark-muted">Wipe all transactions, budgets & subscriptions</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#9B93A9]" />
+          </button>
+        )}
+
         {/* Reset to Sample Data */}
         <button
           onClick={onResetData}
-          className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-[#FCE4EC] dark:border-[#FCE4EC]/30 hover:bg-[#FCE4EC]/20 dark:hover:bg-[#FCE4EC]/10 transition-colors cursor-pointer mt-2"
+          className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-[#E6E6FA]/60 dark:border-dark-border hover:bg-[#FDFBF7] dark:hover:bg-dark-bg transition-colors cursor-pointer mt-2"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FCE4EC] dark:bg-[#FCE4EC]/20 flex items-center justify-center text-rose-500">
+            <div className="w-9 h-9 rounded-xl bg-[#E6E6FA] dark:bg-[#E6E6FA]/20 flex items-center justify-center text-[#574C78] dark:text-purple-300">
               <RotateCcw size={18} />
             </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">Reset to Sample Dataset</p>
-              <p className="text-xs text-[#9B93A9] dark:text-dark-muted">Restore default sample transactions</p>
+              <p className="text-sm font-semibold text-[#4A4556] dark:text-dark-text">Load Sample Dataset</p>
+              <p className="text-xs text-[#9B93A9] dark:text-dark-muted">Explore the app with demo transactions & budgets</p>
             </div>
           </div>
           <ChevronRight size={16} className="text-[#9B93A9]" />

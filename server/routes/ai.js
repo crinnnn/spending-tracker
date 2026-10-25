@@ -21,7 +21,7 @@ function getGenAI() {
 }
 
 async function generateWithFallback(ai, contents, systemInstruction) {
-  const models = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+  const models = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
   let lastError;
 
   for (const model of models) {

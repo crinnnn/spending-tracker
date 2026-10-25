@@ -141,6 +141,7 @@ export const api = {
   // Settings & Backups
   getSettings: () => request('/settings'),
   updateSettings: (settings) => request('/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+  clearDatabase: () => request('/settings/clear', { method: 'POST' }),
   resetDatabase: () => request('/settings/reset', { method: 'POST' }),
   restoreDatabase: (data) => request('/settings/restore', { method: 'POST', body: JSON.stringify(data) }),
 

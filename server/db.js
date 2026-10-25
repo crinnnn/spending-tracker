@@ -49,28 +49,6 @@ export const INITIAL_SUBSCRIPTIONS = [
 
 export async function seedDatabaseIfEmpty() {
   try {
-    const txCount = await Transaction.countDocuments();
-    if (txCount === 0) {
-      console.log('🌱 Seeding initial transactions into MongoDB...');
-      await Transaction.insertMany(INITIAL_TRANSACTIONS);
-    }
-
-    const budgetCount = await Budget.countDocuments();
-    if (budgetCount === 0) {
-      console.log('🌱 Seeding initial budgets into MongoDB...');
-      const budgetDocs = Object.entries(INITIAL_BUDGETS).map(([category, amount]) => ({
-        category,
-        amount,
-      }));
-      await Budget.insertMany(budgetDocs);
-    }
-
-    const subCount = await Subscription.countDocuments();
-    if (subCount === 0) {
-      console.log('🌱 Seeding initial subscriptions into MongoDB...');
-      await Subscription.insertMany(INITIAL_SUBSCRIPTIONS);
-    }
-
     const settingCount = await Setting.countDocuments({ key: 'currency' });
     if (settingCount === 0) {
       await Setting.create({ key: 'currency', value: 'PHP' });

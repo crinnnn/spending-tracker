@@ -78,9 +78,6 @@ router.post('/register', async (req, res) => {
       darkMode: false,
     });
 
-    // Seed default starter data for new user
-    await seedUserData(user._id);
-
     const token = generateToken(user);
 
     res.status(201).json({
