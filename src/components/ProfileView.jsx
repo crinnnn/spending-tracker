@@ -16,7 +16,7 @@ import {
   KeyRound,
   Trash2,
 } from 'lucide-react';
-import { exportToCSV, exportToJSON, readAndValidateJSON, CURRENCY_SYMBOLS, formatCurrency } from '../utils/exportUtils';
+import { exportToCSV, exportToJSON, readAndValidateJSON, CURRENCY_SYMBOLS, CURRENCY_NAMES, formatCurrency } from '../utils/exportUtils';
 
 export default function ProfileView({
   transactions = [],
@@ -146,11 +146,11 @@ export default function ProfileView({
           <select
             value={currency}
             onChange={(e) => onCurrencyChange(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-[#E6E6FA] dark:border-dark-border text-xs font-bold text-[#4A4556] dark:text-dark-text cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-[#E6E6FA] dark:border-dark-border text-xs font-bold text-[#4A4556] dark:text-dark-text cursor-pointer max-w-[220px]"
           >
             {Object.entries(CURRENCY_SYMBOLS).map(([code, symbol]) => (
               <option key={code} value={code}>
-                {code} ({symbol})
+                {code} ({symbol}){CURRENCY_NAMES?.[code] ? ` – ${CURRENCY_NAMES[code]}` : ''}
               </option>
             ))}
           </select>

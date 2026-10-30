@@ -75,17 +75,26 @@ export async function parseExpenseWithAI(userInput, defaultCurrency = 'PHP') {
   const prompt = `You are a strict JSON expense parser.
 
 Date reference — ${dateRef}
-Default currency — ${defaultCurrency}
+Target primary currency — ${defaultCurrency}
 
 Given the following natural-language input, extract EVERY separate expense or transaction mentioned. Return a JSON **array** of objects — one object per distinct expense.
 
+Currency & Auto-Conversion Rules:
+- The target currency is "${defaultCurrency}".
+- If the user specifies an expense in a DIFFERENT currency (e.g. "$15", "20 dollars", "USD", "EUR", "JPY", "SGD", etc.):
+  * Automatically CONVERT the amount to "${defaultCurrency}" using realistic current exchange rates (e.g. 1 USD ≈ 58 PHP, 1 EUR ≈ 62 PHP, etc.).
+  * Set "amount" to the converted value in ${defaultCurrency} (rounded to 2 decimal places).
+  * Set "currency" to "${defaultCurrency}".
+  * In "notes", include the original foreign amount (e.g. "Lunch (Converted from $15.00 USD)").
+- If no foreign currency is specified, assume "${defaultCurrency}".
+
 Each object must have these exact keys:
-- "amount"    (number, positive)
-- "currency"  (string, ISO 4217 code — default to "${defaultCurrency}" if not specified)
+- "amount"    (number, positive converted value in ${defaultCurrency})
+- "currency"  (string, "${defaultCurrency}")
 - "category"  (string, one of: Food & Drink, Transport, Shopping, Bills, Entertainment, Health, Income, Other)
 - "merchant"  (string, best guess for store / payee / source name — use "Unknown" if unclear)
 - "date"      (string, YYYY-MM-DD — resolve relative words like "yesterday", "last Monday", etc. based on today's date)
-- "notes"     (string, short description for this specific expense)
+- "notes"     (string, description with original currency note if converted)
 
 Rules:
 1. Respond with ONLY a valid JSON array — no explanation, no markdown wrappers.
@@ -149,17 +158,21 @@ export async function parseReceiptWithAI({ base64Data, mimeType, defaultCurrency
 Analyze this receipt image and extract the transaction data.
 
 Current date reference: ${localDate}
-Default currency: ${defaultCurrency}
+Target primary currency: ${defaultCurrency}
+
+Target Currency & Auto-Conversion:
+- The user's primary currency is "${defaultCurrency}".
+- If the receipt is in a foreign currency (e.g. USD, EUR, JPY, etc.), automatically convert the total amount to "${defaultCurrency}" using realistic exchange rates. Set "amount" to the converted value, "currency" to "${defaultCurrency}", and note the original receipt amount in "notes" (e.g. "Receipt total (Converted from $24.50 USD)").
 
 Return a valid JSON array of objects. Usually a receipt is a single overall expense transaction, but if multiple distinct line-items should be tracked or if it contains multiple bills, you can return multiple items. If there is a single total receipt, return 1 item with the total amount paid.
 
 Each object must follow this structure:
-- "amount": number (the total or item amount, e.g. 150.50)
-- "currency": string (ISO 4217 code, e.g. "${defaultCurrency}")
+- "amount": number (the total or item amount in ${defaultCurrency})
+- "currency": string ("${defaultCurrency}")
 - "category": string (one of: Food & Drink, Transport, Shopping, Bills, Entertainment, Health, Income, Other)
 - "merchant": string (the name of the store, restaurant, vendor, or utility company)
 - "date": string (YYYY-MM-DD from receipt date; if unreadable or missing, use "${localDate}")
-- "notes": string (brief summary of purchased items, e.g. "Groceries, milk & eggs")
+- "notes": string (brief summary of purchased items and any conversion note)
 
 Respond ONLY with a JSON array. No markdown formatting, no conversational text.`;
 

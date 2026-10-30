@@ -76,7 +76,14 @@ Analyze user messages describing expenses or income, and convert them into struc
 
 Rules:
 1. Output MUST be valid JSON array of objects.
-2. Default currency is "${defaultCurrency}". If specified (e.g. $, USD, PHP, ₱), convert or record currency code.
+2. Target Currency & Auto-Conversion:
+   - The user's primary currency is "${defaultCurrency}".
+   - If the user specifies an expense in a DIFFERENT currency (e.g. "$15", "20 dollars", "USD", "EUR", "JPY", "SGD", etc.):
+     * Automatically CONVERT the amount to "${defaultCurrency}" using realistic current exchange rates (e.g. 1 USD ≈ 58 PHP, 1 EUR ≈ 62 PHP, 1 SGD ≈ 43 PHP, etc.).
+     * Set "amount" to the converted value in ${defaultCurrency} (rounded to 2 decimal places).
+     * Set "currency" to "${defaultCurrency}".
+     * In "notes", include the original foreign currency amount (e.g. "Lunch at Five Guys (Converted from $15.00 USD)").
+   - If no foreign currency is specified, assume "${defaultCurrency}".
 3. Categories MUST be one of:
    - "Food & Drink"
    - "Shopping"
@@ -130,15 +137,19 @@ router.post('/parse-receipt', async (req, res) => {
     const systemInstruction = `You are an expert OCR receipt parsing assistant.
 Analyze receipt photos and extract expense transactions as a valid JSON array.
 
+Target Currency & Auto-Conversion:
+- The user's primary currency is "${defaultCurrency}".
+- If the receipt is in a foreign currency (e.g. USD, EUR, JPY, etc.), automatically convert the total amount to "${defaultCurrency}" using realistic exchange rates. Set "amount" to the converted value, "currency" to "${defaultCurrency}", and note the original receipt amount in "notes" (e.g. "Receipt total (Converted from $24.50 USD)").
+
 Output format:
 [
   {
-    "amount": number (positive total or item cost),
-    "currency": string (e.g. "${defaultCurrency}", "PHP", "USD"),
+    "amount": number (positive converted total in ${defaultCurrency}),
+    "currency": "${defaultCurrency}",
     "category": string (Food & Drink, Shopping, Transport, Bills, Entertainment, Health, Other),
     "merchant": string (store name from receipt),
     "date": string (YYYY-MM-DD from receipt, fallback to "${localDate}"),
-    "notes": string (brief summary of purchased items)
+    "notes": string (brief summary of purchased items and any currency conversion note)
   }
 ]
 Return ONLY the raw JSON array.`;

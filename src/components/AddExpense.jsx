@@ -230,7 +230,7 @@ export default function AddExpense({ onSave, setActiveTab, currency = 'PHP' }) {
               rows={3}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`e.g. "Paid electric bill 3,500 ${currency} last Monday and bought nachos for 180"`}
+              placeholder={`e.g. "Lunch at Five Guys for $15" (auto-converts to ${currency}) or "Groceries 1,200 yesterday"`}
               className="w-full resize-none rounded-2xl bg-[#FDFBF7] dark:bg-dark-bg border border-[#E6E6FA]/50 dark:border-dark-border px-4 py-3 pr-12 text-sm text-[#4A4556] dark:text-dark-text placeholder:text-[#9B93A9]/60 dark:placeholder:text-dark-muted/50 focus:outline-none focus:ring-2 focus:ring-[#E6E6FA] transition-all"
             />
 
